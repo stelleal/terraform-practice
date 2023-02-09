@@ -15,6 +15,7 @@ variable subnet_cidr_blocks {}
 variable avail_zone {}
 variable ec2_instance_type {}
 # variable public_key_location {}
+variable private_key_location {}
 
 resource "aws_vpc" "myapp-vpc" {
     cidr_block = var.vpc_cidr_blocks
@@ -119,8 +120,24 @@ resource "aws_instance" "myapp-ec2" {
     availability_zone = var.avail_zone
     associate_public_ip_address = true
 
-    # Executes the script on the EC2 instance when it is created - only once
-    user_data = file("entry-script.sh")
+    # user_data = file("entry-script.sh")
+
+    # Just don't use provisioners
+    # connection {
+    #     type = "ssh"
+    #     host = self.public_ip
+    #     user = "ec2-user"
+    #     private_key = file(var.private_key_location)
+    # }
+
+    # provisioner "file" {
+    #     source = "entry-script.sh"
+    #     destination = "/home/ec2-user/entry-script.sh"
+    # }
+
+    # provisioner "remote-exec" {
+    #     script = file("entry-script.sh")
+    # }
 
     tags = {
         Name = "${var.env_prefix}-server-ec2"
