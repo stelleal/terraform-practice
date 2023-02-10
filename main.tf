@@ -1,27 +1,27 @@
-resource "aws_vpc" "myapp-vpc" {
-    cidr_block = var.vpc_cidr_blocks
-    enable_dns_support = true
-    enable_dns_hostnames = true
-    tags = {
-        Name = "${var.env_prefix}-vpc"
-    }
-}
+module "vpc" {
+  source = "terraform-aws-modules/vpc/aws"
+  version = "3.19.0"
 
-module "myapp-subnet" {
-    source = "./modules/subnet"
-    env_prefix = var.env_prefix
-    subnet_cidr_blocks = var.subnet_cidr_blocks
-    avail_zone = var.avail_zone
-    vpc_id = aws_vpc.myapp-vpc.id
-    default_route_table_id = aws_vpc.myapp-vpc.default_route_table_id
+  name = "my-vpc"
+  cidr = var.vpc_cidr_blocks
+
+  azs             = [var.avail_zone]
+  public_subnets  = [var.subnet_cidr_blocks]
+  public_subnet_tags = {
+    Name = "${var.env_prefix}-subnet-1"
+  }
+
+  tags = {
+    Name = "${var.env_prefix}-vpc"
+  }
 }
 
 module "myapp-webserver" {
     source = "./modules/webserver"
+    vpc_id = module.vpc.vpc_id
     env_prefix = var.env_prefix
     devops_team_ips = var.devops_team_ips
-    subnet_id = module.myapp-subnet.subnet.id
-    vpc_id = aws_vpc.myapp-vpc.id
+    subnet_id = module.vpc.public_subnets[0]
     avail_zone = var.avail_zone
     ec2_instance_type = var.ec2_instance_type
 }
